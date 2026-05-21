@@ -26,6 +26,8 @@ setup(
         'console_scripts': [
             'multiple_pointmass_acceleration ='
             ' payload_pointmass_multiple_quadrotor.point_mass_acceleration:main',
+            'build_payload_pointmass_multiple ='
+            ' payload_pointmass_multiple_quadrotor.build_payload_planner_pointmass_multiple:cli',
         ],
     },
 )

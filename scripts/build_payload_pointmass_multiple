@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from payload_pointmass_multiple_quadrotor.build_payload_planner_pointmass_multiple import cli
+
+
+if __name__ == "__main__":
+    cli()
