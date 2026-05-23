@@ -14,6 +14,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>geometry_msgs</depend>
+  <depend>mav_manager_srv</depend>
   <depend>nav_msgs</depend>
   <depend>quadrotor_msgs</depend>
   <depend>std_msgs</depend>

@@ -8,12 +8,15 @@
 #include <Eigen/LU>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <mav_manager_srv/srv/lissajous.hpp>
+#include <mav_manager_srv/srv/vec4.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <payload_pointmass_multiple_quadrotor/nmpc_planner_pointmass_multiple.h>
 #include <quadrotor_msgs/msg/position_command.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
+#include <std_srvs/srv/set_bool.hpp>
 
 namespace payload_pointmass_multiple_quadrotor {
 
@@ -96,6 +99,7 @@ public:
       const rclcpp::NodeOptions &options)
       : Node("nmpc_control_pointmass_multiple_nodelet", options) {
     this->declare_parameter("mass_payload", 0.2);
+    this->declare_parameter("mass", 1.0);
     this->declare_parameter("gravity", 9.81);
     this->declare_parameter("cable_length", 0.76);
     this->declare_parameter("nmpc.horizon_steps", 31);
@@ -119,6 +123,7 @@ public:
     this->declare_parameter("planner.lissajous.z_num_periods", 1.0);
 
     this->get_parameter("mass_payload", mass_payload_);
+    this->get_parameter("mass", mass_quadrotor_);
     this->get_parameter("gravity", gravity_);
     this->get_parameter("cable_length", cable_length_);
     this->get_parameter("nmpc.horizon_steps", horizon_steps_);
@@ -179,6 +184,23 @@ public:
                 quadOdomCallback(i, msg);
               });
     }
+
+    srv_full_planner_ = this->create_service<std_srvs::srv::SetBool>(
+        "full_planner",
+        std::bind(&NMPCControlPointMassMultipleNodelet::fullPlannerCallback,
+                  this, std::placeholders::_1, std::placeholders::_2));
+    srv_set_full_planner_point_ = this->create_service<
+        mav_manager_srv::srv::Vec4>(
+        "set_full_planner_point",
+        std::bind(
+            &NMPCControlPointMassMultipleNodelet::setFullPlannerPointCallback,
+            this, std::placeholders::_1, std::placeholders::_2));
+    srv_set_full_planner_lissajous_ =
+        this->create_service<mav_manager_srv::srv::Lissajous>(
+            "set_full_planner_lissajous",
+            std::bind(&NMPCControlPointMassMultipleNodelet::
+                          setFullPlannerLissajousCallback,
+                      this, std::placeholders::_1, std::placeholders::_2));
   }
 
 private:
@@ -186,19 +208,11 @@ private:
     const auto planner_build_start = std::chrono::steady_clock::now();
     planner_start_ = p0;
 
-    const std::array<Eigen::Vector3d, 3> quad_init = {
-        Eigen::Vector3d(-0.0029774502873919804, -0.30020808379855246,
-                        1.4896822896707809),
-        Eigen::Vector3d(-0.003912773485618989, 0.29969367235921324,
-                        1.4896964934919243),
-        Eigen::Vector3d(0.8063607699386893, -0.00040573095469479846,
-                        1.4825609159860986)};
-
     const Eigen::Vector3d equilibrium_payload =
         planner_type_ == "lissajous" ? lissajous_offset_ : planner_start_;
 
     for (int i = 0; i < kRobots; ++i) {
-      q_eq_[i] = normalize(equilibrium_payload - quad_init[i]);
+      q_eq_[i] = normalize(equilibrium_payload - quad_position_[i]);
       alpha_(i) = 1.0 / 3.0;
     }
 
@@ -250,6 +264,99 @@ private:
     RCLCPP_INFO(this->get_logger(),
                 "[PointMassMultiple NMPC] planner initialization took %.3f ms",
                 planner_build_ms);
+  }
+
+  void fullPlannerCallback(
+      const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+      std::shared_ptr<std_srvs::srv::SetBool::Response> response) {
+    use_full_planner_ = request->data;
+    if (use_full_planner_ && have_payload_odom_) {
+      restartPlannerFromCurrentPayload();
+    }
+    response->success = true;
+    response->message = use_full_planner_
+                            ? "Full point-mass multiple planner active"
+                            : "Full point-mass multiple planner inactive";
+    RCLCPP_INFO(this->get_logger(), "[PointMassMultiple NMPC] %s",
+                response->message.c_str());
+  }
+
+  void setFullPlannerPointCallback(
+      const std::shared_ptr<mav_manager_srv::srv::Vec4::Request> request,
+      std::shared_ptr<mav_manager_srv::srv::Vec4::Response> response) {
+    planner_type_ = "point_to_point";
+    planner_goal_ << request->goal[0], request->goal[1], request->goal[2];
+    if (request->goal[3] > 0.0F) {
+      planner_duration_ = request->goal[3];
+    }
+
+    if (have_payload_odom_) {
+      restartPlannerFromCurrentPayload();
+      response->success = true;
+      response->message = "Full planner point-to-point goal set to [" +
+                          std::to_string(planner_goal_.x()) + ", " +
+                          std::to_string(planner_goal_.y()) + ", " +
+                          std::to_string(planner_goal_.z()) + "]";
+    } else {
+      planner_initialized_ = false;
+      response->success = false;
+      response->message =
+          "Point-to-point goal set, but no payload odom has been received yet";
+    }
+    RCLCPP_INFO(this->get_logger(), "[PointMassMultiple NMPC] %s",
+                response->message.c_str());
+  }
+
+  void setFullPlannerLissajousCallback(
+      const std::shared_ptr<mav_manager_srv::srv::Lissajous::Request> request,
+      std::shared_ptr<mav_manager_srv::srv::Lissajous::Response> response) {
+    if (request->period <= 0.0F || request->num_cycles <= 0.0F ||
+        request->ramp_time <= 0.0F) {
+      response->success = false;
+      response->message =
+          "Lissajous period, num_cycles, and ramp_time must be positive";
+      return;
+    }
+
+    planner_type_ = "lissajous";
+    if (have_payload_odom_) {
+      lissajous_offset_ = current_state_.segment<3>(0);
+    }
+    lissajous_x_amp_ = request->x_amp;
+    lissajous_y_amp_ = request->y_amp;
+    lissajous_z_amp_ = request->z_amp;
+    lissajous_period_ = request->period;
+    lissajous_num_cycles_ = request->num_cycles;
+    lissajous_ramp_time_ = request->ramp_time;
+    lissajous_x_num_periods_ = request->x_num_periods;
+    lissajous_y_num_periods_ = request->y_num_periods;
+    lissajous_z_num_periods_ = request->z_num_periods;
+
+    if (have_payload_odom_) {
+      restartPlannerFromCurrentPayload();
+      response->success = true;
+      response->message = "Full planner Lissajous trajectory set and restarted";
+    } else {
+      planner_initialized_ = false;
+      response->success = false;
+      response->message =
+          "Lissajous trajectory set, but no payload odom has been received yet";
+    }
+    RCLCPP_INFO(this->get_logger(), "[PointMassMultiple NMPC] %s",
+                response->message.c_str());
+  }
+
+  void restartPlannerFromCurrentPayload() {
+    if (!(have_quad_odom_[0] && have_quad_odom_[1] && have_quad_odom_[2])) {
+      RCLCPP_WARN(this->get_logger(),
+                  "[PointMassMultiple NMPC] Cannot restart planner before all "
+                  "quadrotor odometries are received.");
+      return;
+    }
+    planner_initialized_ = false;
+    buildPlanner(current_state_.segment<3>(0));
+    reference_start_time_ = this->now().seconds();
+    buildReferenceHorizon(0.0);
   }
 
   void buildLissajousPlanner() {
@@ -522,6 +629,31 @@ private:
     return solution(3 + quad_idx);
   }
 
+  Eigen::Quaterniond desiredOrientationFromForce(const Eigen::Vector3d &force,
+                                                 double yaw) const {
+    const Eigen::Vector3d Yc(-std::sin(yaw), std::cos(yaw), 0.0);
+    Eigen::Vector3d Xb = Yc.cross(force);
+    if (Xb.norm() < 1e-9) {
+      Xb = Eigen::Vector3d::UnitX();
+    } else {
+      Xb.normalize();
+    }
+
+    Eigen::Vector3d Yb = force.cross(Xb);
+    if (Yb.norm() < 1e-9) {
+      Yb = Eigen::Vector3d::UnitY();
+    } else {
+      Yb.normalize();
+    }
+
+    const Eigen::Vector3d Zb = Xb.cross(Yb);
+    Eigen::Matrix3d R;
+    R.col(0) = Xb;
+    R.col(1) = Yb;
+    R.col(2) = Zb;
+    return Eigen::Quaterniond(R).normalized();
+  }
+
   void quadOdomCallback(int quad_idx,
                         const nav_msgs::msg::Odometry::SharedPtr odom_msg) {
     quad_position_[quad_idx] << odom_msg->pose.pose.position.x,
@@ -564,7 +696,7 @@ private:
     controller_.setState(current_state_, stamp_sec);
     have_payload_odom_ = true;
 
-    if (!planner_initialized_) {
+    if (!planner_initialized_ && use_full_planner_) {
       buildPlanner(payload_position);
     }
 
@@ -665,11 +797,73 @@ private:
       msg.cable_force.y = cable_force(1);
       msg.cable_force.z = cable_force(2);
 
+      for (int i = 0; i < kSamplesPointMassMultiple; ++i) {
+        const int state_idx = std::min(i + 1, kSamplesPointMassMultiple - 1);
+        const int input_idx = std::min(i, kSamplesPointMassMultiple - 1);
+        const auto state_i = predicted_states.col(state_idx);
+        const auto input_i = predicted_inputs.col(input_idx);
+
+        const Eigen::Vector3d quad_position =
+            quadrotorPositionFromPayloadState(state_i, quad_idx);
+        const Eigen::Vector3d quad_velocity =
+            quadrotorVelocityFromPayloadState(state_i, quad_idx);
+        const Eigen::Vector3d quad_acceleration =
+            quadrotorAccelerationFromInput(input_i, quad_idx);
+        const Eigen::Vector3d cable_direction =
+            state_i.segment<3>(6 + 3 * quad_idx);
+        const double point_tension =
+            tensionFromStateInput(state_i, input_i, quad_idx);
+        const Eigen::Vector3d desired_force =
+            mass_quadrotor_ * quad_acceleration +
+            mass_quadrotor_ * gravity_ * Eigen::Vector3d::UnitZ() -
+            point_tension * cable_direction;
+        const Eigen::Quaterniond orientation =
+            desiredOrientationFromForce(desired_force, 0.0);
+        const Eigen::Vector3d body_z = orientation.toRotationMatrix().col(2);
+        const double thrust = body_z.dot(desired_force);
+
+        quadrotor_msgs::msg::TrajectoryPoint point;
+        point.position.x = quad_position(0);
+        point.position.y = quad_position(1);
+        point.position.z = quad_position(2);
+        point.velocity.x = quad_velocity(0);
+        point.velocity.y = quad_velocity(1);
+        point.velocity.z = quad_velocity(2);
+        point.acceleration.x = quad_acceleration(0);
+        point.acceleration.y = quad_acceleration(1);
+        point.acceleration.z = quad_acceleration(2);
+        point.position_quad.x = quad_position(0);
+        point.position_quad.y = quad_position(1);
+        point.position_quad.z = quad_position(2);
+        point.velocity_quad.x = quad_velocity(0);
+        point.velocity_quad.y = quad_velocity(1);
+        point.velocity_quad.z = quad_velocity(2);
+        point.acceleration_quad.x = quad_acceleration(0);
+        point.acceleration_quad.y = quad_acceleration(1);
+        point.acceleration_quad.z = quad_acceleration(2);
+        point.tension = point_tension;
+        point.cable_direction.x = cable_direction(0);
+        point.cable_direction.y = cable_direction(1);
+        point.cable_direction.z = cable_direction(2);
+        point.cable_r.x = state_i(15 + 3 * quad_idx);
+        point.cable_r.y = state_i(16 + 3 * quad_idx);
+        point.cable_r.z = state_i(17 + 3 * quad_idx);
+        point.force = thrust;
+        point.quaternion.w = orientation.w();
+        point.quaternion.x = orientation.x();
+        point.quaternion.y = orientation.y();
+        point.quaternion.z = orientation.z();
+        msg.points.push_back(point);
+      }
+
       pub_desired_quadrotor_[quad_idx]->publish(msg);
     }
   }
 
   void run() {
+    if (!use_full_planner_) {
+      return;
+    }
     if (!have_payload_odom_ || !planner_initialized_) {
       return;
     }
@@ -720,6 +914,7 @@ private:
   NMPCControlPointMassMultiple controller_;
   std::string frame_id_{"world"};
   double mass_payload_{0.2};
+  double mass_quadrotor_{1.0};
   double gravity_{9.81};
   double cable_length_{0.76};
   int horizon_steps_{31};
@@ -730,6 +925,7 @@ private:
   double reference_start_time_{0.0};
   bool have_payload_odom_{false};
   bool planner_initialized_{false};
+  bool use_full_planner_{false};
   Eigen::Vector3d planner_start_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d planner_goal_{5.0, 1.2, 0.3};
   Eigen::Vector3d lissajous_offset_{0.34049933598831467, -0.0007520805616463245,
@@ -782,6 +978,11 @@ private:
       sub_payload_odometry_;
   std::array<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr, kRobots>
       sub_quad_odometry_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr srv_full_planner_;
+  rclcpp::Service<mav_manager_srv::srv::Vec4>::SharedPtr
+      srv_set_full_planner_point_;
+  rclcpp::Service<mav_manager_srv::srv::Lissajous>::SharedPtr
+      srv_set_full_planner_lissajous_;
 };
 
 } // namespace payload_pointmass_multiple_quadrotor

@@ -73,7 +73,7 @@ int planner_payload_pointmass_multiple_acados_sim_create(planner_payload_pointma
     const int np = PLANNER_PAYLOAD_POINTMASS_MULTIPLE_NP;
     bool tmp_bool;
 
-    double Tsim = 0.07142857142857142;
+    double Tsim = 0.04838709677419355;
 
     capsule->acados_sim_mem = NULL;
 

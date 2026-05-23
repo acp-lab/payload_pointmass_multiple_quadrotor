@@ -18,9 +18,11 @@ find_package(Eigen3 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(mav_manager_srv REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(quadrotor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 set(acados_path "$ENV{ACADOS_SOURCE_DIR}")
 set(acados_lib "${acados_path}/lib")
@@ -76,9 +78,11 @@ ament_target_dependencies(payload_pointmass_multiple_component
   rclcpp
   rclcpp_components
   geometry_msgs
+  mav_manager_srv
   nav_msgs
   quadrotor_msgs
   std_msgs
+  std_srvs
 )
 
 rclcpp_components_register_node(payload_pointmass_multiple_component
