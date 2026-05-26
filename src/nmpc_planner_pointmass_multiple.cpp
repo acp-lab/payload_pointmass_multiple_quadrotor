@@ -9,18 +9,14 @@ NMPCControlPointMassMultiple::NMPCControlPointMassMultiple()
     : solve_from_scratch_(true),
       current_state_(
           Eigen::Matrix<double, kStateSizePointMassMultiple, 1>::Zero()),
-      reference_states_(
-          Eigen::Matrix<double, kStateSizePointMassMultiple,
-                        kSamplesPointMassMultiple>::Zero()),
-      reference_inputs_(
-          Eigen::Matrix<double, kInputSizePointMassMultiple,
-                        kSamplesPointMassMultiple>::Zero()),
-      predicted_states_(
-          Eigen::Matrix<double, kStateSizePointMassMultiple,
-                        kSamplesPointMassMultiple>::Zero()),
-      predicted_inputs_(
-          Eigen::Matrix<double, kInputSizePointMassMultiple,
-                        kSamplesPointMassMultiple>::Zero()) {
+      reference_states_(Eigen::Matrix<double, kStateSizePointMassMultiple,
+                                      kSamplesPointMassMultiple>::Zero()),
+      reference_inputs_(Eigen::Matrix<double, kInputSizePointMassMultiple,
+                                      kSamplesPointMassMultiple>::Zero()),
+      predicted_states_(Eigen::Matrix<double, kStateSizePointMassMultiple,
+                                      kSamplesPointMassMultiple>::Zero()),
+      predicted_inputs_(Eigen::Matrix<double, kInputSizePointMassMultiple,
+                                      kSamplesPointMassMultiple>::Zero()) {
   current_state_(8) = -1.0;
   current_state_(11) = -1.0;
   current_state_(14) = -1.0;
@@ -88,7 +84,8 @@ NMPCControlPointMassMultiple::getReferenceInputs() {
 int NMPCControlPointMassMultiple::run() {
   wrapper_.setTrajectory(reference_states_, reference_inputs_);
   if (solve_from_scratch_) {
-    std::cout << "Solving point-mass multiple NMPC with hover as initial guess.\n";
+    std::cout
+        << "Solving point-mass multiple NMPC with hover as initial guess.\n";
     wrapper_.prepare(current_state_);
     solve_from_scratch_ = false;
   }
