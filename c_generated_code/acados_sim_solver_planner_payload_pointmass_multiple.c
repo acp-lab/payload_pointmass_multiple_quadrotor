@@ -30,6 +30,7 @@
 // standard
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> // memcpy
 
 // acados
 #include "acados_c/external_function_interface.h"
@@ -44,7 +45,8 @@
 // example specific
 #include "planner_payload_pointmass_multiple_model/planner_payload_pointmass_multiple_model.h"
 #include "acados_sim_solver_planner_payload_pointmass_multiple.h"
-
+// initial value of stagewise parameters
+static const double p_init[] = {0.34049933598831467,-0.0007520805616463245,0.8936953489145677,0,0,0,0.45782637765823303,0.3991502852827919,-0.7944016979331092,0.458562511746537,-0.4000241434989265,-0.7935370863662627,-0.6204377426219421,-0.0004612709974139917,-0.7842555672478555,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
 
 // ** solver data **
 
@@ -181,21 +183,9 @@ int planner_payload_pointmass_multiple_acados_sim_create(planner_payload_pointma
 
 
     /* initialize parameter values */
-    double* p = calloc(np, sizeof(double));
     
-    p[0] = 0.34049933598831467;
-    p[1] = -0.0007520805616463245;
-    p[2] = 0.8936953489145677;
-    p[6] = 0.45782637765823303;
-    p[7] = 0.3991502852827919;
-    p[8] = -0.7944016979331092;
-    p[9] = 0.458562511746537;
-    p[10] = -0.4000241434989265;
-    p[11] = -0.7935370863662627;
-    p[12] = -0.6204377426219421;
-    p[13] = -0.0004612709974139917;
-    p[14] = -0.7842555672478555;
-
+    double* p = malloc(np*sizeof(double));
+    memcpy(p, p_init, np*sizeof(double));
     planner_payload_pointmass_multiple_acados_sim_update_params(capsule, p, np);
     free(p);
 

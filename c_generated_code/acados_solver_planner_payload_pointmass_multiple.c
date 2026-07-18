@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h> // memcpy
 // acados
 // #include "acados/utils/print.h"
 #include "acados_c/ocp_nlp_interface.h"
@@ -88,6 +89,10 @@
 #define NSPHIN PLANNER_PAYLOAD_POINTMASS_MULTIPLE_NSPHIN
 #define NSGN   PLANNER_PAYLOAD_POINTMASS_MULTIPLE_NSGN
 #define NSBXN  PLANNER_PAYLOAD_POINTMASS_MULTIPLE_NSBXN
+// initial value of stagewise parameters
+static const double p_init[] = {0.34049933598831467,-0.0007520805616463245,0.8936953489145677,0,0,0,0.45782637765823303,0.3991502852827919,-0.7944016979331092,0.458562511746537,-0.4000241434989265,-0.7935370863662627,-0.6204377426219421,-0.0004612709974139917,-0.7842555672478555,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+
+
 
 
 
@@ -423,20 +428,11 @@ void planner_payload_pointmass_multiple_acados_create_set_default_parameters(pla
 {
 
     const int N = capsule->nlp_solver_plan->N;
-    // initialize parameters to nominal value
-    double* p = calloc(NP, sizeof(double));
-    p[0] = 0.34049933598831467;
-    p[1] = -0.0007520805616463245;
-    p[2] = 0.8936953489145677;
-    p[6] = 0.45782637765823303;
-    p[7] = 0.3991502852827919;
-    p[8] = -0.7944016979331092;
-    p[9] = 0.458562511746537;
-    p[10] = -0.4000241434989265;
-    p[11] = -0.7935370863662627;
-    p[12] = -0.6204377426219421;
-    p[13] = -0.0004612709974139917;
-    p[14] = -0.7842555672478555;
+
+    // initialize parameters to initial value
+    
+    double* p = malloc(NP*sizeof(double));
+    memcpy(p, p_init, NP*sizeof(double));
 
     for (int i = 0; i <= N; i++) {
         planner_payload_pointmass_multiple_acados_update_params(capsule, i, p, NP);

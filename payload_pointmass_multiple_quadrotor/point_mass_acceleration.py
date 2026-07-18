@@ -176,8 +176,8 @@ class PayloadControlMujocoMultiplePointMass(Node):
         print(self.n_u)
 
         ## Define odometry subscriber
-        self.subscriber_payload_ = self.create_subscription(Odometry, "/quadrotor1/payload/odom", self.callback_get_odometry_payload, 10)
-        self.publisher_desired_payload = self.create_publisher(Path, "/quadrotor1/payload/desired_path", 10)
+        self.subscriber_payload_ = self.create_subscription(Odometry, "/eagle8/payload/odom", self.callback_get_odometry_payload, 10)
+        self.publisher_desired_payload = self.create_publisher(Path, "/eagle8/payload/desired_path", 10)
 
         self.publisher_cable_angular_velocity = self.create_publisher(
             Float64MultiArray,
@@ -191,24 +191,24 @@ class PayloadControlMujocoMultiplePointMass(Node):
         )
 
         ## Subcriber of each drone
-        self.subscriber_drone_1_ = self.create_subscription(Odometry, "/quadrotor1/odom", self.callback_get_odometry_drone_1, 10)
-        self.subscriber_drone_2_ = self.create_subscription(Odometry, "/quadrotor2/odom", self.callback_get_odometry_drone_2, 10)
-        self.subscriber_drone_3_ = self.create_subscription(Odometry, "/quadrotor3/odom", self.callback_get_odometry_drone_3, 10)
+        self.subscriber_drone_1_ = self.create_subscription(Odometry, "/eagle8/odom", self.callback_get_odometry_drone_1, 10)
+        self.subscriber_drone_2_ = self.create_subscription(Odometry, "/eagle10/odom", self.callback_get_odometry_drone_2, 10)
+        self.subscriber_drone_3_ = self.create_subscription(Odometry, "/eagle11/odom", self.callback_get_odometry_drone_3, 10)
 
         ## TF We can verify cable direction if they make sense or not
         self.tf_broadcaster = TransformBroadcaster(self)
 
         ## Publisher desired states for quadrotor
-        self.publisher_ref_quadrotor_1 = self.create_publisher(PositionCommand, "/quadrotor1/payload_planner_quadrotor_cmd", 10)
-        self.publisher_prediction_quadrotor_1 = self.create_publisher(Path, "/quadrotor1/predicted_path", 10)
+        self.publisher_ref_quadrotor_1 = self.create_publisher(PositionCommand, "/eagle8/payload_planner_quadrotor_cmd", 10)
+        self.publisher_prediction_quadrotor_1 = self.create_publisher(Path, "/eagle8/predicted_path", 10)
 
         ## Publisher desired states for quadrotor
-        self.publisher_ref_quadrotor_2 = self.create_publisher(PositionCommand, "/quadrotor2/payload_planner_quadrotor_cmd", 10)
-        self.publisher_prediction_quadrotor_2 = self.create_publisher(Path, "/quadrotor2/predicted_path", 10)
+        self.publisher_ref_quadrotor_2 = self.create_publisher(PositionCommand, "/eagle10/payload_planner_quadrotor_cmd", 10)
+        self.publisher_prediction_quadrotor_2 = self.create_publisher(Path, "/eagle10/predicted_path", 10)
 
         ## Publisher desired states for quadrotor
-        self.publisher_ref_quadrotor_3 = self.create_publisher(PositionCommand, "/quadrotor3/payload_planner_quadrotor_cmd", 10)
-        self.publisher_prediction_quadrotor_3 = self.create_publisher(Path, "/quadrotor3/predicted_path", 10)
+        self.publisher_ref_quadrotor_3 = self.create_publisher(PositionCommand, "/eagle11/payload_planner_quadrotor_cmd", 10)
+        self.publisher_prediction_quadrotor_3 = self.create_publisher(Path, "/eagle11/predicted_path", 10)
 
         self.publisher_prediction_payload = self.create_publisher(Path, "payload/predicted_path", 10)
 
@@ -773,7 +773,7 @@ class PayloadControlMujocoMultiplePointMass(Node):
         tf_world_quad1 = TransformStamped()
         tf_world_quad1.header.stamp = self.get_clock().now().to_msg()
         tf_world_quad1.header.frame_id = 'world'            # <-- world is the parent
-        tf_world_quad1.child_frame_id = 'quadrotor1'          # <-- imu_link is rotated
+        tf_world_quad1.child_frame_id = 'eagle8'          # <-- imu_link is rotated
 
         tf_world_quad1.transform.translation.x = self.xq_1[0]
         tf_world_quad1.transform.translation.y = self.xq_1[1]
@@ -787,7 +787,7 @@ class PayloadControlMujocoMultiplePointMass(Node):
         tf_world_quad2 = TransformStamped()
         tf_world_quad2.header.stamp = self.get_clock().now().to_msg()
         tf_world_quad2.header.frame_id = 'world'            # <-- world is the parent
-        tf_world_quad2.child_frame_id = 'quadrotor2'          # <-- imu_link is rotated
+        tf_world_quad2.child_frame_id = 'eagle10'          # <-- imu_link is rotated
 
         tf_world_quad2.transform.translation.x = self.xq_2[0]
         tf_world_quad2.transform.translation.y = self.xq_2[1]
@@ -801,7 +801,7 @@ class PayloadControlMujocoMultiplePointMass(Node):
         tf_world_quad3 = TransformStamped()
         tf_world_quad3.header.stamp = self.get_clock().now().to_msg()
         tf_world_quad3.header.frame_id = 'world'            # <-- world is the parent
-        tf_world_quad3.child_frame_id = 'quadrotor3'          # <-- imu_link is rotated
+        tf_world_quad3.child_frame_id = 'eagle11'          # <-- imu_link is rotated
 
         tf_world_quad3.transform.translation.x = self.xq_3[0]
         tf_world_quad3.transform.translation.y = self.xq_3[1]

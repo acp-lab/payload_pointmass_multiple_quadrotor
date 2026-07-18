@@ -23,6 +23,8 @@ namespace payload_pointmass_multiple_quadrotor {
 namespace {
 
 constexpr int kRobots = 3;
+constexpr std::array<const char *, kRobots> kRobotNames = {"eagle8", "eagle10",
+                                                           "eagle11"};
 constexpr int kPolyDegree = 9;
 
 Eigen::Vector3d normalize(const Eigen::Vector3d &v) {
@@ -166,20 +168,20 @@ public:
     for (int i = 0; i < kRobots; ++i) {
       pub_desired_quadrotor_[i] =
           this->create_publisher<quadrotor_msgs::msg::PositionCommand>(
-              "/quadrotor" + std::to_string(i + 1) +
+              "/" + std::string(kRobotNames[i]) +
                   "/payload_planner_quadrotor_cmd",
               1);
     }
 
     sub_payload_odometry_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/quadrotor1/payload/odom", qos_profile,
+        "/" + std::string(kRobotNames[0]) + "/payload/odom", qos_profile,
         std::bind(&NMPCControlPointMassMultipleNodelet::payloadOdomCallback,
                   this, std::placeholders::_1));
 
     for (int i = 0; i < kRobots; ++i) {
       sub_quad_odometry_[i] =
           this->create_subscription<nav_msgs::msg::Odometry>(
-              "/quadrotor" + std::to_string(i + 1) + "/odom", qos_profile,
+              "/" + std::string(kRobotNames[i]) + "/odom", qos_profile,
               [this, i](const nav_msgs::msg::Odometry::SharedPtr msg) {
                 quadOdomCallback(i, msg);
               });
