@@ -1,5 +1,5 @@
 {
-    "code_gen_opts": {
+    "code_gen_options": {
         "acados_include_path": "//home/fer/acados/include",
         "acados_lib_path": "//home/fer/acados/lib",
         "acados_link_libs": {
@@ -7,20 +7,37 @@
             "daqp": "",
             "hpmpc": "",
             "ooqp": "",
-            "openmp": "",
+            "openmp": "-fopenmp",
             "osqp": "",
             "qpdunes": "",
             "qpoases": "-lqpOASES_e"
         },
-        "acados_version": "d9d0ba2e8",
+        "acados_version": "1ed24fbb7",
+        "casadi_code_gen_options": {
+            "casadi_int": "int",
+            "casadi_real": "double",
+            "force_canonical": false,
+            "mex": false
+        },
         "code_export_directory": "/home/fer/payload_transportation_ws/src/payload_pointmass_multiple_quadrotor/c_generated_code",
         "cython_include_dirs": [
             "/home/fer/.local/lib/python3.10/site-packages/numpy/core/include",
             "/usr/include/python3.10"
         ],
+        "ext_fun_compile_flags": "-O2",
+        "ext_fun_expand_constr": false,
+        "ext_fun_expand_cost": false,
+        "ext_fun_expand_dyn": false,
+        "ext_fun_expand_precompute": false,
+        "generate_hess": false,
         "json_file": "/home/fer/payload_transportation_ws/src/payload_pointmass_multiple_quadrotor/acados_ocp_planner_payload_pointmass_multiple.json",
+        "model_external_shared_lib_dir": null,
+        "model_external_shared_lib_name": null,
         "os": "unix",
-        "shared_lib_ext": ".so"
+        "sens_forw_p": false,
+        "shared_lib_ext": ".so",
+        "with_solution_sens_wrt_params": false,
+        "with_value_sens_wrt_params": false
     },
     "constraints": {
         "C": [],
@@ -412,7 +429,7 @@
         "planner_payload_pointmass_multiple_cost/planner_payload_pointmass_multiple_cost_ext_cost_e_fun_jac_hess.c",
         "planner_payload_pointmass_multiple_cost/planner_payload_pointmass_multiple_cost_ext_cost_e_fun_jac.c"
     ],
-    "hash": "75e69d57fdb3633917ee69161a402066",
+    "hash": "7f19a1c4edc233f70db9f668397df84a",
     "model": {
         "con_h_expr": "MX(@1=0, vertcat(dot(n1, n1), dot(n2, n2), dot(n3, n3), (horzcat(horzcat(all_0.2(3x3,3nz), n1, n2, n3)', horzcat(n1', @1, @1, @1)', horzcat(n2', @1, @1, @1)', horzcat(n3', @1, @1, @1)')'\\vertcat([-0, -0, -1.962], (dot(n1, a_1)-(0.77*dot(r1, r1))), (dot(n2, a_2)-(0.77*dot(r2, r2))), (dot(n3, a_3)-(0.77*dot(r3, r3)))))[3:6]))",
         "con_h_expr_0": [],
