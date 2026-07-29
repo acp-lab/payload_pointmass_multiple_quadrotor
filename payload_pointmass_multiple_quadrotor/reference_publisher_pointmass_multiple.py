@@ -33,7 +33,7 @@ class PointMassMultipleReferencePublisher(Node):
         self.planner_duration = 5.0
         self.planner_type = "lissajous"
 
-        self.length = 0.76
+        self.length = 1.0
         self.mass = 0.2
         self.gravity = 9.81
 

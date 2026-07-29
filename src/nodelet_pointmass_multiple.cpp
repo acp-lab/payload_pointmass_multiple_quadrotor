@@ -101,7 +101,7 @@ public:
     this->declare_parameter("mass_payload", 0.2);
     this->declare_parameter("mass", 1.0);
     this->declare_parameter("gravity", 9.81);
-    this->declare_parameter("cable_length", 0.76);
+    this->declare_parameter("cable_length", 1.0);
     this->declare_parameter("nmpc.horizon_steps", 31);
     this->declare_parameter("nmpc.horizon_time", 1.5);
     this->declare_parameter<std::vector<double>>(
@@ -916,7 +916,7 @@ private:
   double mass_payload_{0.2};
   double mass_quadrotor_{1.0};
   double gravity_{9.81};
-  double cable_length_{0.76};
+  double cable_length_{1.0};
   int horizon_steps_{31};
   double horizon_time_{1.5};
   double ts_{horizon_time_ / static_cast<double>(horizon_steps_)};

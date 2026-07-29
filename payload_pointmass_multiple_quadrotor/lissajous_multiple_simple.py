@@ -191,7 +191,7 @@ def plan_three_quad_lissajous_payload(
         raise ValueError("offset must be length-3.")
 
     if cable_lengths is None:
-        cable_lengths = np.array([0.76, 0.76, 0.76], dtype=float)
+        cable_lengths = np.array([1.0, 1.0, 1.0], dtype=float)
     else:
         cable_lengths = np.asarray(cable_lengths, dtype=float)
 
@@ -336,7 +336,7 @@ def main() -> None:
         n_samples=401,
         payload_mass=0.2,
         gravity=9.81,
-        cable_lengths=np.array([0.76, 0.76, 0.76], dtype=float),
+        cable_lengths=np.array([1.0, 1.0, 1.0], dtype=float),
     )
 
     smoothness = verify_smoothness(data)

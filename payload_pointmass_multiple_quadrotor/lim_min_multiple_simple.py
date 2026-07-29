@@ -623,7 +623,7 @@ def main() -> None:
         n_samples=201,
         payload_mass=payload_mass,
         gravity=gravity,
-        cable_lengths=np.array([0.75, 0.75, 0.75], dtype=float),
+        cable_lengths=np.array([1.0, 1.0, 1.0], dtype=float),
         alpha=np.array([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], dtype=float),
     )
 

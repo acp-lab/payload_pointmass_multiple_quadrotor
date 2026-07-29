@@ -69,7 +69,7 @@ class PayloadControlMujocoMultiplePointMass(Node):
         self.mass_quad = 1.24
 
         # Cable length
-        self.length = 0.76
+        self.length = 1.0
         self.e3 = ca.DM([0, 0, 1])
 
 
