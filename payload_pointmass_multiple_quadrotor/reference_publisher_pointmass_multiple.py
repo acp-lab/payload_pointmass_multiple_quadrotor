@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from pathlib import Path as FilePath
 import time
 
 import numpy as np
@@ -107,7 +106,9 @@ class PointMassMultipleReferencePublisher(Node):
 
     def reference_from_plan(self, t_query: float):
         times = self.reference_plan["t"]
-        idx = int(np.clip(np.searchsorted(times, t_query, side="left"), 0, len(times) - 1))
+        idx = int(
+            np.clip(np.searchsorted(times, t_query, side="left"), 0, len(times) - 1)
+        )
 
         xd = np.zeros((self.n_x,), dtype=np.double)
         ud = np.zeros((self.n_u,), dtype=np.double)

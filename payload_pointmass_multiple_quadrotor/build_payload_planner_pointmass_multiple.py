@@ -90,7 +90,9 @@ class PayloadPointMassMultipleBuilder:
 
         self.project_root = Path(__file__).resolve().parents[1]
         self.code_export_directory = self.project_root / "c_generated_code"
-        self.json_file = self.project_root / "acados_ocp_planner_payload_pointmass_multiple.json"
+        self.json_file = (
+            self.project_root / "acados_ocp_planner_payload_pointmass_multiple.json"
+        )
 
         self.ocp = self.solver(self.x_0)
         AcadosOcpSolver(
@@ -235,9 +237,8 @@ class PayloadPointMassMultipleBuilder:
         Kp_r = ca.DM(self.Kp_r)
         R_q = ca.DM(self.R_q)
 
-        lyapunov_position = (
-            error_position.T @ Kp @ error_position
-            + self.mass * (error_velocity.T @ Kv @ error_velocity)
+        lyapunov_position = error_position.T @ Kp @ error_position + self.mass * (
+            error_velocity.T @ Kv @ error_velocity
         )
 
         ocp.model.cost_expr_ext_cost = (
@@ -324,7 +325,9 @@ def main(params):
 
 def cli():
     if len(sys.argv) < 2:
-        raise SystemExit("usage: build_payload_planner_pointmass_multiple.py <config.yaml>")
+        raise SystemExit(
+            "usage: build_payload_planner_pointmass_multiple.py <config.yaml>"
+        )
     path_to_yaml = os.path.abspath(sys.argv[1])
     params = yaml_to_dict(path_to_yaml)
     print(params)

@@ -35,7 +35,6 @@ with explicit flat outputs (x_L, lambda_2, lambda_3, yaw_1, yaw_2, yaw_3).
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from math import factorial
 from pathlib import Path
@@ -45,6 +44,7 @@ import numpy as np
 
 try:
     import matplotlib.pyplot as plt
+
     HAS_MPL = True
 except Exception:
     HAS_MPL = False
@@ -120,18 +120,20 @@ def poly9_coeffs(
     for r in range(5):
         A[5 + r, :] = derivative_row(degree, r, 1.0)
 
-    b = np.vstack([
-        p0,
-        T * v0,
-        T**2 * a0,
-        T**3 * j0,
-        T**4 * s0,
-        pf,
-        T * vf,
-        T**2 * af,
-        T**3 * jf,
-        T**4 * sf,
-    ])
+    b = np.vstack(
+        [
+            p0,
+            T * v0,
+            T**2 * a0,
+            T**3 * j0,
+            T**4 * s0,
+            pf,
+            T * vf,
+            T**2 * af,
+            T**3 * jf,
+            T**4 * sf,
+        ]
+    )
 
     coeffs = np.linalg.solve(A, b)
     return coeffs
@@ -293,14 +295,22 @@ def plan_three_quad_point_mass(
     #    These q_i point from each quadrotor to the payload.
     #    Since the quads are above the payload, q_i have negative z components.
     # ------------------------------------------------------------------
-    quad_1_init = np.array([-0.0029774502873919804, -0.30020808379855246, 1.4896822896707809])
-    quad_2_init = np.array([-0.003912773485618989, 0.29969367235921324, 1.4896964934919243])
-    quad_3_init = np.array([0.8063607699386893, -0.00040573095469479846, 1.4825609159860986])
-    payload_init = np.array([0.34049933598831467, -0.0007520805616463245, 0.8936953489145677])
+    quad_1_init = np.array(
+        [-0.0029774502873919804, -0.30020808379855246, 1.4896822896707809]
+    )
+    quad_2_init = np.array(
+        [-0.003912773485618989, 0.29969367235921324, 1.4896964934919243]
+    )
+    quad_3_init = np.array(
+        [0.8063607699386893, -0.00040573095469479846, 1.4825609159860986]
+    )
+    payload_init = np.array(
+        [0.34049933598831467, -0.0007520805616463245, 0.8936953489145677]
+    )
 
-    q1_eq = normalize(payload_init-quad_1_init)
-    q2_eq = normalize(payload_init-quad_2_init)
-    q3_eq = normalize(payload_init-quad_3_init)
+    q1_eq = normalize(payload_init - quad_1_init)
+    q2_eq = normalize(payload_init - quad_2_init)
+    q3_eq = normalize(payload_init - quad_3_init)
     q_eq_list = [q1_eq, q2_eq, q3_eq]
 
     # Build nonzero equilibrium lambda_i that balance gravity at hover.
@@ -417,7 +427,9 @@ def _finite_difference_norm(signal: np.ndarray, dt: float) -> np.ndarray:
     return np.linalg.norm(diffs, axis=-1)
 
 
-def verify_smoothness(data: Dict[str, np.ndarray], tol: float = 1e-6) -> Dict[str, float]:
+def verify_smoothness(
+    data: Dict[str, np.ndarray], tol: float = 1e-6
+) -> Dict[str, float]:
     """
     Compute lightweight smoothness diagnostics for the sampled planner outputs.
 
@@ -476,12 +488,18 @@ def verify_smoothness(data: Dict[str, np.ndarray], tol: float = 1e-6) -> Dict[st
         )
 
     endpoint_ok = (
-        payload_v0 < tol and payload_vf < tol and
-        payload_a0 < tol and payload_af < tol and
-        payload_j0 < tol and payload_jf < tol and
-        payload_s0 < tol and payload_sf < tol and
-        max(quad_v0) < 1e-4 and max(quad_vf) < 1e-4 and
-        max(quad_a0) < 1e-4 and max(quad_af) < 1e-4
+        payload_v0 < tol
+        and payload_vf < tol
+        and payload_a0 < tol
+        and payload_af < tol
+        and payload_j0 < tol
+        and payload_jf < tol
+        and payload_s0 < tol
+        and payload_sf < tol
+        and max(quad_v0) < 1e-4
+        and max(quad_vf) < 1e-4
+        and max(quad_a0) < 1e-4
+        and max(quad_af) < 1e-4
     )
 
     return {
@@ -532,7 +550,7 @@ def plot_signal_diagnostics(data: Dict[str, np.ndarray]) -> None:
     for axis in range(3):
         ax = axes[2, axis]
         for i in range(3):
-            ax.plot(t, data["q"][i, :, axis], label=f"q{i+1}", linewidth=1.8)
+            ax.plot(t, data["q"][i, :, axis], label=f"q{i + 1}", linewidth=1.8)
         ax.set_title(f"cable direction {'xyz'[axis]}")
         ax.grid(True, alpha=0.3)
         if axis == 0:
@@ -541,7 +559,7 @@ def plot_signal_diagnostics(data: Dict[str, np.ndarray]) -> None:
     for axis in range(3):
         ax = axes[3, axis]
         for i in range(3):
-            ax.plot(t, data["qdot"][i, :, axis], label=f"qdot{i+1}", linewidth=1.8)
+            ax.plot(t, data["qdot"][i, :, axis], label=f"qdot{i + 1}", linewidth=1.8)
         ax.set_title(f"cable direction rate {'xyz'[axis]}")
         ax.grid(True, alpha=0.3)
         if axis == 0:
@@ -555,7 +573,7 @@ def plot_signal_diagnostics(data: Dict[str, np.ndarray]) -> None:
         for axis in range(3):
             ax = axes[row_offset, axis]
             for i in range(3):
-                ax.plot(t, series[i, :, axis], label=f"quad{i+1}", linewidth=1.8)
+                ax.plot(t, series[i, :, axis], label=f"quad{i + 1}", linewidth=1.8)
             ax.set_title(f"{title} {'xyz'[axis]}")
             ax.grid(True, alpha=0.3)
             if axis == 0:
@@ -563,7 +581,7 @@ def plot_signal_diagnostics(data: Dict[str, np.ndarray]) -> None:
 
     tension_ax = axes[6, 0]
     for i in range(3):
-        tension_ax.plot(t, data["tension"][i], label=f"T{i+1}", linewidth=1.8)
+        tension_ax.plot(t, data["tension"][i], label=f"T{i + 1}", linewidth=1.8)
     tension_ax.set_title("cable tension [N]")
     tension_ax.grid(True, alpha=0.3)
     tension_ax.legend()
@@ -591,7 +609,7 @@ def plot_signal_diagnostics(data: Dict[str, np.ndarray]) -> None:
         for axis in range(3):
             ax = axes[row, axis]
             for i in range(series.shape[0]):
-                label = prefix if series.shape[0] == 1 else f"{prefix}{i+1}"
+                label = prefix if series.shape[0] == 1 else f"{prefix}{i + 1}"
                 ax.plot(t, series[i, :, axis], label=label, linewidth=1.8)
             ax.set_title(f"{title} {'xyz'[axis]}")
             ax.grid(True, alpha=0.3)
@@ -633,14 +651,22 @@ def main() -> None:
     print()
 
     for i in range(3):
-        print(f"quad {i+1} start position: {data['quad_p'][i, 0]}")
-        print(f"quad {i+1} final position: {data['quad_p'][i, -1]}")
-        print(f"quad {i+1} start velocity norm: {np.linalg.norm(data['quad_v'][i, 0]):.6e}")
-        print(f"quad {i+1} final velocity norm: {np.linalg.norm(data['quad_v'][i, -1]):.6e}")
-        print(f"quad {i+1} start accel norm   : {np.linalg.norm(data['quad_a'][i, 0]):.6e}")
-        print(f"quad {i+1} final accel norm   : {np.linalg.norm(data['quad_a'][i, -1]):.6e}")
-        print(f"quad {i+1} min tension        : {data['tension'][i].min():.6f}")
-        print(f"quad {i+1} max tension        : {data['tension'][i].max():.6f}")
+        print(f"quad {i + 1} start position: {data['quad_p'][i, 0]}")
+        print(f"quad {i + 1} final position: {data['quad_p'][i, -1]}")
+        print(
+            f"quad {i + 1} start velocity norm: {np.linalg.norm(data['quad_v'][i, 0]):.6e}"
+        )
+        print(
+            f"quad {i + 1} final velocity norm: {np.linalg.norm(data['quad_v'][i, -1]):.6e}"
+        )
+        print(
+            f"quad {i + 1} start accel norm   : {np.linalg.norm(data['quad_a'][i, 0]):.6e}"
+        )
+        print(
+            f"quad {i + 1} final accel norm   : {np.linalg.norm(data['quad_a'][i, -1]):.6e}"
+        )
+        print(f"quad {i + 1} min tension        : {data['tension'][i].min():.6f}")
+        print(f"quad {i + 1} max tension        : {data['tension'][i].max():.6f}")
         print()
 
     # Quick consistency check:
@@ -665,9 +691,15 @@ def main() -> None:
     print(f"max quad start accel norm        : {smoothness['quad_a0_max_norm']:.3e}")
     print(f"max quad final accel norm        : {smoothness['quad_af_max_norm']:.3e}")
     print(f"max cable unit-norm error        : {smoothness['max_q_norm_error']:.3e}")
-    print(f"max q·qdot orthogonality error   : {smoothness['max_q_qdot_orthogonality_error']:.3e}")
-    print(f"max payload jerk norm            : {smoothness['max_payload_jerk_norm']:.3e}")
-    print(f"max payload snap norm            : {smoothness['max_payload_snap_norm']:.3e}")
+    print(
+        f"max q·qdot orthogonality error   : {smoothness['max_q_qdot_orthogonality_error']:.3e}"
+    )
+    print(
+        f"max payload jerk norm            : {smoothness['max_payload_jerk_norm']:.3e}"
+    )
+    print(
+        f"max payload snap norm            : {smoothness['max_payload_snap_norm']:.3e}"
+    )
     print(f"max tension rate                 : {smoothness['max_tension_rate']:.3e}")
     print(f"max cable direction rate         : {smoothness['max_q_rate']:.3e}")
     print(f"max cable angular-accel rate     : {smoothness['max_qddot_rate']:.3e}")
@@ -681,11 +713,20 @@ def main() -> None:
     if HAS_MPL:
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="3d")
-        ax.plot(data["payload_p"][:, 0], data["payload_p"][:, 1], data["payload_p"][:, 2],
-                label="payload", linewidth=2)
+        ax.plot(
+            data["payload_p"][:, 0],
+            data["payload_p"][:, 1],
+            data["payload_p"][:, 2],
+            label="payload",
+            linewidth=2,
+        )
         for i in range(3):
-            ax.plot(data["quad_p"][i, :, 0], data["quad_p"][i, :, 1], data["quad_p"][i, :, 2],
-                    label=f"quad {i+1}")
+            ax.plot(
+                data["quad_p"][i, :, 0],
+                data["quad_p"][i, :, 1],
+                data["quad_p"][i, :, 2],
+                label=f"quad {i + 1}",
+            )
         ax.set_xlabel("x [m]")
         ax.set_ylabel("y [m]")
         ax.set_zlabel("z [m]")
